@@ -14,9 +14,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlbumEntity::class,
         ArtistEntity::class,
         TransitionRuleEntity::class,
-        SongArtistCrossRef::class
+        SongArtistCrossRef::class,
+        DownloadedTrackEntity::class
     ],
-    version = 11, // Incremented version for artist image support
+    version = 12, // Incremented version for downloaded tracks support
     exportSchema = false
 )
 abstract class PixelPlayDatabase : RoomDatabase() {
@@ -24,6 +25,7 @@ abstract class PixelPlayDatabase : RoomDatabase() {
     abstract fun searchHistoryDao(): SearchHistoryDao
     abstract fun musicDao(): MusicDao // Added MusicDao
     abstract fun transitionDao(): TransitionDao
+    abstract fun downloadedTrackDao(): DownloadedTrackDao
 
     companion object {
         val MIGRATION_3_4 = object : Migration(3, 4) {
@@ -86,6 +88,20 @@ abstract class PixelPlayDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Add image_url column to artists table for Deezer artist images
                 db.execSQL("ALTER TABLE artists ADD COLUMN image_url TEXT DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create downloaded_tracks table for offline playback
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS downloaded_tracks (
+                        trackId TEXT NOT NULL PRIMARY KEY,
+                        localPath TEXT NOT NULL,
+                        downloadedAt INTEGER NOT NULL,
+                        fileSize INTEGER NOT NULL
+                    )
+                """.trimIndent())
             }
         }
     }

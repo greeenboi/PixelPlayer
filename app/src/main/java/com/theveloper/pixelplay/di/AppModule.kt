@@ -85,7 +85,8 @@ object AppModule {
             PixelPlayDatabase.MIGRATION_4_5,
             PixelPlayDatabase.MIGRATION_6_7,
             PixelPlayDatabase.MIGRATION_9_10,
-            PixelPlayDatabase.MIGRATION_10_11
+            PixelPlayDatabase.MIGRATION_10_11,
+            PixelPlayDatabase.MIGRATION_11_12
         )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
@@ -113,6 +114,12 @@ object AppModule {
     @Provides
     fun provideTransitionDao(database: PixelPlayDatabase): TransitionDao {
         return database.transitionDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideDownloadedTrackDao(database: PixelPlayDatabase): DownloadedTrackDao {
+        return database.downloadedTrackDao()
     }
 
     @Provides
@@ -240,5 +247,74 @@ object AppModule {
         musicDao: MusicDao
     ): ArtistImageRepository {
         return ArtistImageRepository(deezerApiService, musicDao)
+    }
+
+    // ==================== Eden API ====================
+
+    /**
+     * Qualifier for Eden Retrofit instance.
+     */
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class EdenRetrofit
+
+    /**
+     * Provides AuthInterceptor for Eden API
+     */
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        userPreferencesRepository: UserPreferencesRepository
+    ): com.theveloper.pixelplay.data.network.eden.AuthInterceptor {
+        return com.theveloper.pixelplay.data.network.eden.AuthInterceptor(userPreferencesRepository)
+    }
+
+    /**
+     * Provides OkHttpClient with AuthInterceptor for Eden API
+     */
+    @Provides
+    @Singleton
+    @EdenRetrofit
+    fun provideEdenOkHttpClient(
+        authInterceptor: com.theveloper.pixelplay.data.network.eden.AuthInterceptor
+    ): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor()
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+        return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+
+    /**
+     * Provides Retrofit instance for Eden API
+     */
+    @Provides
+    @Singleton
+    @EdenRetrofit
+    fun provideEdenRetrofit(@EdenRetrofit okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://eden-server.suvan-gowrishanker-204.workers.dev/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    /**
+     * Provides Eden API service
+     */
+    @Provides
+    @Singleton
+    fun provideEdenApiService(@EdenRetrofit retrofit: Retrofit): com.theveloper.pixelplay.data.network.eden.EdenApiService {
+        return retrofit.create(com.theveloper.pixelplay.data.network.eden.EdenApiService::class.java)
+    }
+
+    /**
+     * Provides StreamUrlCache for caching stream URLs
+     */
+    @Provides
+    @Singleton
+    fun provideStreamUrlCache(): com.theveloper.pixelplay.data.cache.StreamUrlCache {
+        return com.theveloper.pixelplay.data.cache.StreamUrlCache()
     }
 }

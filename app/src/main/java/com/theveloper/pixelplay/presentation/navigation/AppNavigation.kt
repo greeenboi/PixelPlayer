@@ -64,6 +64,43 @@ fun AppNavigation(
             navController = navController,
             startDestination = initialRoute
         ) {
+            // Authentication screens
+            composable(
+                Screen.Login.route,
+                enterTransition = { enterTransition() },
+                exitTransition = { exitTransition() },
+                popEnterTransition = { enterTransition() },
+                popExitTransition = { exitTransition() },
+            ) {
+                com.theveloper.pixelplay.presentation.screens.auth.LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToSignup = {
+                        navController.navigate(Screen.Signup.route)
+                    }
+                )
+            }
+            composable(
+                Screen.Signup.route,
+                enterTransition = { enterTransition() },
+                exitTransition = { exitTransition() },
+                popEnterTransition = { enterTransition() },
+                popExitTransition = { exitTransition() },
+            ) {
+                com.theveloper.pixelplay.presentation.screens.auth.SignupScreen(
+                    onSignupSuccess = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Signup.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable(
                 Screen.Home.route,
                 enterTransition = { enterTransition() },

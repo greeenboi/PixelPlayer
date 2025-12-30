@@ -180,6 +180,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
+            val authViewModel: com.theveloper.pixelplay.presentation.viewmodel.AuthViewModel = hiltViewModel()
             val systemDarkTheme = isSystemInDarkTheme()
             val appThemeMode by userPreferencesRepository.appThemeModeFlow.collectAsState(initial = AppThemeMode.FOLLOW_SYSTEM)
             val useDarkTheme = when (appThemeMode) {
@@ -188,11 +189,20 @@ class MainActivity : ComponentActivity() {
                 else -> systemDarkTheme
             }
             val isSetupComplete by mainViewModel.isSetupComplete.collectAsState()
+            val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
             var showSetupScreen by remember { mutableStateOf<Boolean?>(null) }
+            var showLoginScreen by remember { mutableStateOf<Boolean?>(null) }
             
             // Crash report dialog state
             var showCrashReportDialog by remember { mutableStateOf(false) }
             var crashLogData by remember { mutableStateOf<CrashLogData?>(null) }
+
+            // Check authentication state
+            LaunchedEffect(isAuthenticated) {
+                if (showLoginScreen == null) {
+                    showLoginScreen = !isAuthenticated && !isBenchmarkMode
+                }
+            }
 
             LaunchedEffect(isSetupComplete) {
                 if (showSetupScreen == null) {
@@ -212,25 +222,43 @@ class MainActivity : ComponentActivity() {
                 darkTheme = useDarkTheme
             ) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    if (showSetupScreen != null) {
-                        AnimatedContent(
-                            targetState = showSetupScreen,
-                            transitionSpec = {
-                                if (targetState == false) {
-                                    // Transition from Setup to Main App
-                                    scaleIn(initialScale = 0.8f, animationSpec = tween(400)) + fadeIn(animationSpec = tween(400)) togetherWith
-                                            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(400)) + fadeOut(animationSpec = tween(400))
-                                } else {
-                                    // Placeholder for other transitions, e.g., Main App to Setup
-                                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    when {
+                        // Show login screen if not authenticated
+                        showLoginScreen == true -> {
+                            com.theveloper.pixelplay.presentation.screens.auth.LoginScreen(
+                                onLoginSuccess = { 
+                                    showLoginScreen = false 
+                                },
+                                onNavigateToSignup = {
+                                    // Navigate to signup - handled within the screen
                                 }
-                            },
-                            label = "SetupTransition"
-                        ) { targetState ->
-                            if (targetState == true) {
-                                SetupScreen(onSetupComplete = { showSetupScreen = false })
-                            } else {
-                                HandlePermissions(mainViewModel, isBenchmarkMode)
+                            )
+                        }
+                        // Show setup screen if setup is not complete
+                        showSetupScreen == true && isAuthenticated -> {
+                            SetupScreen(onSetupComplete = { showSetupScreen = false })
+                        }
+                        // Show main app if authenticated and setup complete
+                        showSetupScreen != null && showLoginScreen != null -> {
+                            AnimatedContent(
+                                targetState = showSetupScreen,
+                                transitionSpec = {
+                                    if (targetState == false) {
+                                        // Transition from Setup to Main App
+                                        scaleIn(initialScale = 0.8f, animationSpec = tween(400)) + fadeIn(animationSpec = tween(400)) togetherWith
+                                                slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(400)) + fadeOut(animationSpec = tween(400))
+                                    } else {
+                                        // Placeholder for other transitions, e.g., Main App to Setup
+                                        fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                                    }
+                                },
+                                label = "SetupTransition"
+                            ) { targetState ->
+                                if (targetState == true) {
+                                    SetupScreen(onSetupComplete = { showSetupScreen = false })
+                                } else {
+                                    HandlePermissions(mainViewModel, isBenchmarkMode)
+                                }
                             }
                         }
                     }
