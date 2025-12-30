@@ -110,6 +110,12 @@ constructor(
         val GROUP_BY_ALBUM_ARTIST = booleanPreferencesKey("group_by_album_artist")
         val ARTIST_SETTINGS_RESCAN_REQUIRED =
                 booleanPreferencesKey("artist_settings_rescan_required")
+        
+        // Authentication
+        val AUTH_TOKEN = stringPreferencesKey("auth_token")
+        val USER_ID = stringPreferencesKey("user_id")
+        val USER_EMAIL = stringPreferencesKey("user_email")
+        val USER_NAME = stringPreferencesKey("user_name")
     }
 
     val appRebrandDialogShownFlow: Flow<Boolean> =
@@ -956,6 +962,77 @@ constructor(
     suspend fun setFoldersPlaylistView(isPlaylistView: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_FOLDERS_PLAYLIST_VIEW] = isPlaylistView
+        }
+    }
+
+    // ==================== Authentication ====================
+    
+    val authTokenFlow: Flow<String?> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.AUTH_TOKEN]
+            }
+
+    suspend fun setAuthToken(token: String?) {
+        dataStore.edit { preferences ->
+            if (token != null) {
+                preferences[PreferencesKeys.AUTH_TOKEN] = token
+            } else {
+                preferences.remove(PreferencesKeys.AUTH_TOKEN)
+            }
+        }
+    }
+
+    val userIdFlow: Flow<String?> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.USER_ID]
+            }
+
+    suspend fun setUserId(userId: String?) {
+        dataStore.edit { preferences ->
+            if (userId != null) {
+                preferences[PreferencesKeys.USER_ID] = userId
+            } else {
+                preferences.remove(PreferencesKeys.USER_ID)
+            }
+        }
+    }
+
+    val userEmailFlow: Flow<String?> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.USER_EMAIL]
+            }
+
+    suspend fun setUserEmail(email: String?) {
+        dataStore.edit { preferences ->
+            if (email != null) {
+                preferences[PreferencesKeys.USER_EMAIL] = email
+            } else {
+                preferences.remove(PreferencesKeys.USER_EMAIL)
+            }
+        }
+    }
+
+    val userNameFlow: Flow<String?> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.USER_NAME]
+            }
+
+    suspend fun setUserName(name: String?) {
+        dataStore.edit { preferences ->
+            if (name != null) {
+                preferences[PreferencesKeys.USER_NAME] = name
+            } else {
+                preferences.remove(PreferencesKeys.USER_NAME)
+            }
+        }
+    }
+
+    suspend fun clearAuthData() {
+        dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.AUTH_TOKEN)
+            preferences.remove(PreferencesKeys.USER_ID)
+            preferences.remove(PreferencesKeys.USER_EMAIL)
+            preferences.remove(PreferencesKeys.USER_NAME)
         }
     }
 }
