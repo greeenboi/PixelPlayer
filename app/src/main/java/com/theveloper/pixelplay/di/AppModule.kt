@@ -85,7 +85,8 @@ object AppModule {
             PixelPlayDatabase.MIGRATION_4_5,
             PixelPlayDatabase.MIGRATION_6_7,
             PixelPlayDatabase.MIGRATION_9_10,
-            PixelPlayDatabase.MIGRATION_10_11
+            PixelPlayDatabase.MIGRATION_10_11,
+            PixelPlayDatabase.MIGRATION_11_12
         )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
@@ -113,6 +114,12 @@ object AppModule {
     @Provides
     fun provideTransitionDao(database: PixelPlayDatabase): TransitionDao {
         return database.transitionDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideDownloadedTrackDao(database: PixelPlayDatabase): DownloadedTrackDao {
+        return database.downloadedTrackDao()
     }
 
     @Provides
